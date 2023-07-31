@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prm-mon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      mon: prm
+  serviceName: "prm-mon"
+  template:
+    metadata:
+      labels:
+        mon: prm
+    spec:
+      initContainers:
+      - image: busybox
+        name: mount-dir-fix
+        command: ['sh', '-c', 'chmod 777 /prometheus']
+        volumeMounts:
+        - name: prm-data
+          mountPath: /prometheus
+      containers:
+      - image: prom/prometheus:v2.45.0
+        name: prm-mon
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+      volumes:
+       - name: config
+         configMap:
+          name: prm-config
+      serviceAccount: prometheus
+  volumeClaimTemplates:
+  - metadata:
+      name: prm-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "csi-ceph-ssd-gz1"
+      resources:
+        requests:
+          storage: 5Gi

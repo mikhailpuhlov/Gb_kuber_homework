@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prm-mon
+spec:
+  selector:
+    mon: prm
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prm-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: 89.208.198.121.nip.io
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: prm-mon
+            port:
+              number: 9090
